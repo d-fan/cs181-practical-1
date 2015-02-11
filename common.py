@@ -9,6 +9,13 @@ try:
 except ImportError:
 	BITARRAY = False
 
+"""
+Usage:
+>>> import common
+>>> molecules = common.load_molecules()
+>>> common.to_fann_file(molecules, "outputfile.fann")
+"""
+
 class Molecule:
 	"""
 	Molecule object
@@ -23,6 +30,7 @@ class Molecule:
 
 	def __init__(self, *args):
 		if len(args) == 1:
+			csv_row = args[0]
 			self.smiles = csv_row[0]
 			self.features = [int(float(item)) for item in csv_row[1:-1]]
 			self.gap = float(csv_row[-1])
@@ -31,16 +39,20 @@ class Molecule:
 			self.features = args[1]
 			self.gap = args[2]
 
-def load_molecules(file_name="train.csv.gz"):
+def load_molecules(file_name="train.csv.gz", max_count = None):
 	"""Returns a list of molecule objects"""
+	count = 0
+	molecules = []
 	with gzip.open(file_name) as train_file:
 		train_reader = csv.reader(train_file)
 		train_reader.next()
 
-		molecules = []
 		for index, row in enumerate(train_reader):
 			molecules.append(Molecule(row))
-		return molecules
+			count += 1
+			if count == max_count:
+				return molecules
+	return molecules
 
 def save_compact(molecules, filename):
 	if not BITARRAY:
@@ -70,8 +82,8 @@ def load_compact(filename):
 			molecules.append(molecule)
 	return molecules
 
-def to_fann_file(molecule_list, output_file):
-	with open(output_file, 'w') as outfile:
+def to_fann_file(molecule_list, outfile_name):
+	with open(outfile_name, 'w') as outfile:
 		n_samples = len(molecule_list)
 		n_inputs = len(molecule_list[0].features)
 		n_outputs = 1
