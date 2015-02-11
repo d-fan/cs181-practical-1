@@ -1,6 +1,13 @@
 import csv
 import gzip
+import struct
 from sets import Set
+from array import array
+try:
+	from bitarray import bitarray
+	BITARRAY = True
+except ImportError:
+	BITARRAY = False
 
 class Molecule:
 	"""
@@ -14,10 +21,15 @@ class Molecule:
 		gap: HOMO-LUMO gap value
 	"""
 
-	def __init__(self, csv_row):
-		self.smiles = csv_row[0]
-		self.features = [int(float(item)) for item in row[1:-1]]
-		self.gap = float(csv_row[-1])
+	def __init__(self, *args):
+		if len(args) == 1:
+			self.smiles = csv_row[0]
+			self.features = [int(float(item)) for item in csv_row[1:-1]]
+			self.gap = float(csv_row[-1])
+		elif len(args) == 3:
+			self.smiles = args[0]
+			self.features = args[1]
+			self.gap = args[2]
 
 def load_molecules(file_name="train.csv.gz"):
 	"""Returns a list of molecule objects"""
@@ -28,10 +40,42 @@ def load_molecules(file_name="train.csv.gz"):
 		molecules = []
 		for index, row in enumerate(train_reader):
 			molecules.append(Molecule(row))
+		return molecules
 
-def to_fann_file(molecule_list, output_file, inputs, outputs):
-	with gzip.open(output_file) as out_file:
-		outfile.write("%s %s %s" % (len(molecule_list), inputs, outputs))
+def save_compact(molecules, filename):
+	if not BITARRAY:
+		return
+	with open(filename, 'wb') as outfile:
+		for molecule in molecules:
+			# Compact binary representation of bit list
+			feature_bytes = bitarray(molecule.features).tobytes() 
+			# Binary representation of float
+			gap_bytes = struct.pack('f', molecule.gap)
+			# Add together with SMILES at end
+			out = "%s%s" % (feature_bytes, gap_bytes)
+			outfile.write(out)
+
+def load_compact(filename):
+	if not BITARRAY:
+		return []
+	molecules = []
+	with open(filename, 'rb') as infile:
+		while True:
+			features_bytes = infile.read(256 / 8)
+			features = bitarray()
+			features.frombytes(features_bytes)
+			gap_bytes = infile.read(4)
+			gap = struct.unpack('f', gap_bytes)
+			molecule = Molecule("No SMILES representation", features.tolist(), gap)
+			molecules.append(molecule)
+	return molecules
+
+def to_fann_file(molecule_list, output_file):
+	with open(output_file, 'w') as outfile:
+		n_samples = len(molecule_list)
+		n_inputs = len(molecule_list[0].features)
+		n_outputs = 1
+		outfile.write("%s %s %s\n" % (n_samples, n_inputs, n_outputs))
 		for molecule in molecule_list:
-			outfile.write(molecule.features.join(' '))
-			outfile.write(molecule.gap)
+			outfile.write(' '.join([str(i) for i in molecule.features]) + '\n')
+			outfile.write(str(molecule.gap) + '\n')
