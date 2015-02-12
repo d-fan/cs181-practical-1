@@ -1,3 +1,5 @@
+#!/bin/python
+
 from fann2 import libfann as fann
 import sys
 
@@ -8,11 +10,11 @@ if len(sys.argv) < 3:
 connection_rate = 1
 learning_rate = 0.7
 num_input = 256
-num_hidden = 256
+num_hidden = 256*16
 num_output = 1
 
 target_error = 0.2
-max_epochs = 10
+max_epochs = 3
 epoch_per_report = 1
 
 ann = fann.neural_net()
