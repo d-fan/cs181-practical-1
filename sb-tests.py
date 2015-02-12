@@ -1,37 +1,56 @@
 import csv
 import gzip
 import numpy as np
-# from sklearn import svm
+from rdkit import Chem
 from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import ElasticNet
+from sklearn.cross_validation import train_test_split
 from sklearn import neighbors
 
 train_filename = 'train.csv.gz'
 test_filename  = 'test.csv.gz'
 pred_filename  = 'example_mean.csv'
+samples = 10
+
+def pred_avg(arr, datum):
+    total_pred = 0
+    for model in arr:
+        pred = model.predict(datum)
+        if isinstance(pred, list):
+            pred = pred[0]
+        total_pred += pred
+    return total_pred/len(arr)
 
 def build_svm(train_data):
+    # X_train, X_test, y_train, y_test = train_test_split(train_data['features'], train_data['gap'], test_size=0.8)
     # clf = svm.SVC(gamma = 0.001)
     # clf.fit(train_data['features'], train_data['gap'])
     # return clf
     #####################
     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
-    # svr_lin = SVR(kernel='linear', C=1e3)
-    # svr_poly = SVR(kernel='poly', C=1e3, degree=2)
+    svr_lin = SVR(kernel='linear', C=1e3)
+    svr_poly = SVR(kernel='poly', C=1e3, degree=2)
     # ############################
     y_rbf = svr_rbf.fit(train_data['features'], train_data['gap'])
     # y_lin = svr_lin.fit(train_data['features'], train_data['gap'])
     # y_poly = svr_poly.fit(train_data['features'], train_data['gap'])
     # #############################
-    # clf = Ridge(alpha=1.0)
-    # clf.fit(train_data['features'], train_data['gap'])
+    r_clf = Ridge(alpha = 1.0)
+    l_clf = Lasso(alpha=0.001)
+    en_clf = ElasticNet(alpha=0.0001, l1_ratio = 0.7)
+    # r_clf.fit(train_data['features'], train_data['gap'])
+    # l_clf.fit(train_data['features'], train_data['gap'])
+    # en_clf.fit(train_data['features'], train_data['gap'])
     ##########################
 
-    # num_neighbors = 10
-    # knn = neighbors.KNeighborsRegressor(num_neighbors, weights='uniform')
-    # y_ = knn.fit(train_data['features'], train_data['gap'])
+    num_neighbors = 10
+    knn = neighbors.KNeighborsRegressor(num_neighbors, weights='uniform')
+    # y_knn = knn.fit(train_data['features'], train_data['gap'])
 
-    return y_rbf
+    return [y_rbf]
 
 # Load the training file.
 train_data = []
@@ -46,20 +65,24 @@ with gzip.open(train_filename, 'r') as train_fh:
 
     # Load the data.
     for i, row in enumerate(train_csv):
-        # if (i > 1000):
-        #     break
+        if (i > samples):
+            break
         # if (i % 10 == 0):
         #     print "Finished ", i, "trainings"
         smiles   = row[0]
         features = np.array([float(x) for x in row[1:257]])
         gap      = float(row[257])
-        
-        train_data.append({ 'smiles':   smiles,
-                            'features': features,
-                            'gap':      gap })
+        # if (i > samples):
+            # train_data.append({ 'smiles':   smiles,
+            #                 'features': features,
+            #                 'gap':      gap })
+        # else:
         train_data2['smiles'].append(smiles)
         train_data2['features'].append(features)
-        train_data2['gap'].append(gap)   
+        train_data2['gap'].append(gap)  
+
+        # if (i > samples*2):
+        #     break 
 
 # Compute the mean of the gaps in the training data.
 gaps = np.array([datum['gap'] for datum in train_data])
@@ -78,8 +101,8 @@ with gzip.open(test_filename, 'r') as test_fh:
 
     # Load the data.
     for i, row in enumerate(test_csv):
-        # if (i > 1000):
-        #     break
+        if (i > samples):
+            break
         # if (i % 10 == 0):
         #     print "Finished ", i, "tests"
         id       = row[0]
@@ -102,26 +125,18 @@ with open(pred_filename, 'w') as pred_fh:
     # Write the header row.
     pred_csv.writerow(['Id', 'Prediction'])
 
-    rbf = build_svm(train_data2)
+    pred_arr = build_svm(train_data2)
 
-    # for datum in test_data:
-    #     # pred_csv.writerow([datum['id'], mean_gap])
-    #     pred_csv.writerow([datum['id'], rbf.predict(datum['features'])[0]])
+    for datum in test_data:
+        # pred_csv.writerow([datum['id'], mean_gap])
+        pred_csv.writerow([datum['id'], pred_avg(pred_arr, datum['features'])[0]])
 
     rmse = 0
     for datum in train_data:
-        rmse += (rbf.predict(datum['features'])[0] - datum['gap'])**2
+        rmse += (pred_avg(pred_arr, datum['features']) - datum['gap'])**2
 
-    rmse = np.sqrt(rmse/1000)
+    rmse = np.sqrt(rmse/samples)
     print "LOL gg: ", rmse
 
-# def predict(test_data):
-#     predictions = []
-#     for datum in test_data:
-#         predictions.append({'id': datum['id'],
-#                             'pred': })
-#     return predictions
 
-# def predict(clf, features):
-#     clf.predict(features)
 
