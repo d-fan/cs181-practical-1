@@ -20,7 +20,7 @@ def build_svm(train_data):
     # svr_poly = SVR(kernel='poly', C=1e3, degree=2)
     # ############################
     y_rbf = svr_rbf.fit(train_data['features'], train_data['gap'])
-    y_lin = svr_lin.fit(train_data['features'], train_data['gap'])
+    # y_lin = svr_lin.fit(train_data['features'], train_data['gap'])
     # y_poly = svr_poly.fit(train_data['features'], train_data['gap'])
     # #############################
     # clf = Ridge(alpha=1.0)
