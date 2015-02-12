@@ -16,12 +16,12 @@ def build_svm(train_data):
     # return clf
     #####################
     svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
-    svr_lin = SVR(kernel='linear', C=1e3)
-    svr_poly = SVR(kernel='poly', C=1e3, degree=2)
+    # svr_lin = SVR(kernel='linear', C=1e3)
+    # svr_poly = SVR(kernel='poly', C=1e3, degree=2)
     # ############################
     y_rbf = svr_rbf.fit(train_data['features'], train_data['gap'])
     y_lin = svr_lin.fit(train_data['features'], train_data['gap'])
-    y_poly = svr_poly.fit(train_data['features'], train_data['gap'])
+    # y_poly = svr_poly.fit(train_data['features'], train_data['gap'])
     # #############################
     # clf = Ridge(alpha=1.0)
     # clf.fit(train_data['features'], train_data['gap'])
@@ -46,8 +46,10 @@ with gzip.open(train_filename, 'r') as train_fh:
 
     # Load the data.
     for i, row in enumerate(train_csv):
-        if (i > 1000):
-            break
+        # if (i > 1000):
+        #     break
+        # if (i % 10 == 0):
+        #     print "Finished ", i, "trainings"
         smiles   = row[0]
         features = np.array([float(x) for x in row[1:257]])
         gap      = float(row[257])
@@ -76,8 +78,10 @@ with gzip.open(test_filename, 'r') as test_fh:
 
     # Load the data.
     for i, row in enumerate(test_csv):
-        if (i > 1000):
-            break
+        # if (i > 1000):
+        #     break
+        # if (i % 10 == 0):
+        #     print "Finished ", i, "tests"
         id       = row[0]
         smiles   = row[1]
         features = np.array([float(x) for x in row[2:258]])
