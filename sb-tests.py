@@ -14,7 +14,7 @@ from sklearn import neighbors
 train_filename = 'train.csv.gz'
 test_filename  = 'test.csv.gz'
 pred_filename  = 'example_mean.csv'
-samples = 1000
+samples = 5000
 
 def pred_avg(arr, datum):
     total_pred = 0
@@ -83,12 +83,14 @@ with gzip.open(train_filename, 'r') as train_fh:
             train_data2['features'].append(features2)
             train_data2['gap'].append(gap)  
 
+        
+
         if (i > samples*2):
             break 
 
-# Compute the mean of the gaps in the training data.
-gaps = np.array([datum['gap'] for datum in train_data])
-mean_gap = np.mean(gaps)
+# # Compute the mean of the gaps in the training data.
+# gaps = np.array([datum['gap'] for datum in train_data])
+# mean_gap = np.mean(gaps)
 
 # Load the test file.
 # test_data = []
